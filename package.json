@@ -1,11 +1,11 @@
 {
-  "name": "api-todo",
+  "name": "binggge-api",
   "version": "1.0.0",
-  "description": "Petite API de gestion de taches, support de cours Git et deploiement",
-  "main": "src/server.js",
+  "description": "API de gestion de séries pour binggge",
+  "main": "server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
+    "start": "node server.js",
+    "dev": "node --watch server.js",
     "test": "node --test tests/server.test.js"
   },
   "license": "MIT",
