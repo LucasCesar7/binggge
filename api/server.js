@@ -62,6 +62,12 @@ app.post("/register", async (req, res) => {
 
 // POST /watchlist : Ajoute une série (protégée)
 app.post("/watchlist", verifierUtilisateur, (req, res) => {
+  const { title } = req.body;
+  
+  if (!title || title.trim() === "") {
+    return res.status(400).json({ erreur: "Le titre est obligatoire" });
+  }
+
   res.status(201).json({ message: "Série ajoutée (simulation avant base de données)" });
 });
 
