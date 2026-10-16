@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const request = require('supertest');
-const app = require('../server.js');
+const app = require('../src/server.js');
 
 test('01 - /health répond 200', async () => {
   const r = await request(app).get('/health');
