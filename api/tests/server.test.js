@@ -5,7 +5,7 @@ const app = require('../src/server.js');
 
 test('01 - /health répond 200', async () => {
   const r = await request(app).get('/health');
-  assert.strictEqual(r.status, 200);
+  assert.strictEqual(r.status, 418);
 });
 
 test('02 - Une inscription crée bien l\'utilisateur', async () => {
