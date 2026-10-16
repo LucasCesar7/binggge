@@ -10,8 +10,8 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_PASSWORD: ${DB_PASS}
-    volumes:
-      - "pgdata:/var/lib/postgresql/data"
+      POSTGRES_DB: binggge
+    volumes: [pgdata:/var/lib/postgresql/data]
 
 volumes:
   pgdata:
