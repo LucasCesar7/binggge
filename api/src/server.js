@@ -8,7 +8,7 @@ const app = express();
 app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
-// Connexion à la base de données
+// Connexion à la bases de données
 const db = new Pool({
   connectionString: process.env.DATABASE_URL || "postgres://postgres:binggge@localhost:5432/binggge",
 });
