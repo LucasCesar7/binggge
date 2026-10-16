@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: Pipeline CI/CD
 
 on:
   push:
@@ -16,6 +16,13 @@ jobs:
           POSTGRES_PASSWORD: test
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:test@localhost:5432/postgres
     steps:
       - name: Récupération du code
         uses: actions/checkout@v4
@@ -25,8 +32,40 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Installation et tests
+      - name: Initialisation du schéma de la base
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          until pg_isready -h localhost; do sleep 1; done
+          psql "$DATABASE_URL" -f api/db/schema.sql
+
+      - name: Exécution des tests
         working-directory: ./api
         run: |
           npm ci
-          npm test  
+          npm test
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Construction de l'image Docker
+        run: docker build -t binggge-api:${GITHUB_SHA::7} ./api
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Déploiement SSH sur iut.cafeclaudie.fr
+        env:
+          SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+          LOGIN: ${{ secrets.LOGIN }}
+        run: |
+          eval $(ssh-agent -s)
+          echo "$SSH_DEPLOY_KEY" | tr -d '\r' | ssh-add -
+          mkdir -p ~/.ssh
+          ssh-keyscan iut.cafeclaudie.fr >> ~/.ssh/known_hosts
+          ssh -A $LOGIN@iut.cafeclaudie.fr 'cd ~ && git pull && sudo binggge up -d --build'

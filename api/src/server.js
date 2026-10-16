@@ -8,13 +8,9 @@ const app = express();
 app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
-// Connexion à la base de données
+// Connexion à la bases de données
 const db = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "binggge",
-  password: "binggge",
-  port: 5432,
+  connectionString: process.env.DATABASE_URL || "postgres://postgres:binggge@localhost:5432/binggge",
 });
 
 // Middleware : le garde des routes privées
