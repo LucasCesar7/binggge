@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 export default function App() {
   const [apiUrl, setApiUrl] = useState("http://localhost:3000");
-  const [currentUser, setCurrentUser] = useState("olivia");
+  const [currentUser, setCurrentUser] = useState("lucas");
   const [userInput, setUserInput] = useState("");
 
   // Recherche
