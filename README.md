@@ -1,21 +1,15 @@
 # binggge
 
-Petite application de suivi de séries développée dans le cadre du cours d'Automatisation de la chaîne de production. Elle permet de rechercher des séries, de les ajouter à sa liste personnelle et de suivre l'avancement des séries vues.
+Petite application de suivi de séries développée dans le cadre du cours d'Automatisation de la chaîne de production (BUT Informatique). Elle permet de rechercher des séries, de les ajouter à sa liste personnelle et à terme de suivre l'avancement des épisodes vus.
 
-Le projet est composé d'une API en Node.js (Express), d'une base de données PostgreSQL sous Docker, et d'une interface web en React.
+Le projet est composé d'une API en Node.js (Express), d'une base de données PostgreSQL conteneurisée, et accueillera une interface web en React.
 
 ---
 
 ## URL de production
 
-L'API est déployée et accessible en ligne sur le serveur de l'IUT :
-- **Healthcheck** : `https://iut.cafeclaudie.fr/LucasCesar7/health`
-
----
-
-## Démarrage rapide
-
-Pour faire tourner le projet en local :
+L'API est déployée et accessible en ligne sur le serveur de cours :
+* **Healthcheck :** `https://iut.cafeclaudie.fr/LucasCesar7/health`
 
 1. Créer un fichier `.env` à la racine (non versionné) :
 ```env
@@ -26,12 +20,13 @@ DB_PASS=binggge
 ```bash
 docker compose up -d --build
 ```
+L'API est alors joignable sur `http://localhost:3000`.
 
 3. Ou lancer l'API directement avec Node en local :
 ```bash
 cd api
 npm install
-npm start
+npm run dev
 ```
 
 L'API est accessible sur `http://localhost:3000`.
@@ -70,7 +65,7 @@ docker compose exec -T db psql -U postgres binggge < api/db/schema.sql
 **Pourquoi ce choix ?**  
 Le but de ces séances est de mettre en place la chaîne de production, la conteneurisation et les tests automatisés, sans s'encombrer de la complexité d'un vrai système d'authentification (mots de passe hachés, JWT ou sessions).
 
-L'en-tête `X-User` suffit pour identifier l'utilisateur qui effectue la requête et permet à l'API de refuser l'accès avec un code `401 Unauthorized` lorsque l'en-tête est manquant. Cela permet d'écrire et de valider des tests sur les cas de refus d'accès.
+L'en-tête `X-User` permet simplement de savoir qui appelle l'API et de tester les cas de refus d'accès (`401 Unauthorized`) quand l'en-tête est absent.
 
 ---
 
@@ -135,21 +130,20 @@ Accessible sur : `http://localhost:5173`
 
 Les tests sont écrits avec le module natif de Node.js (`node:test`) et `supertest`.
 
-Pour exécuter la suite de tests :
+Pour les exécuter :
 ```bash
 cd api
 npm test
 ```
 
 ### Cas testés :
-1. `/health` répond un statut 200.
-2. L'inscription via `/register` crée bien l'utilisateur.
-3. L'ajout d'une série via `/watchlist` avec l'en-tête `X-User` fonctionne (201).
-4. L'accès à `/watchlist` sans en-tête renvoie une erreur 401.
+1. `GET /health` répond un statut 200.
+2. L'inscription via `POST /register` crée bien l'utilisateur en base.
+3. L'ajout d'une série via `POST /watchlist` avec l'en-tête `X-User` fonctionne (201).
+4. L'accès à `GET /watchlist` sans en-tête renvoie une erreur 401.
 5. L'ajout d'une série avec un titre vide est rejeté avec une erreur 400.
 
-### Défi test rouge / vert
-Conformément à la consigne, le refus d'un titre vide a d'abord été validé par un test rouge (`TEST_WATCHLIST_NOK.png`), puis corrigé dans l'API pour passer au vert (`TEST_WATCHLIST_OK.png`). Les deux captures sont disponibles à la racine du dépôt.
+Les captures du test rouge/vert du TP2 (`TEST_WATCHLIST_NOK.png` et `TEST_WATCHLIST_OK.png`) sont présentes à la racine.
 
 ---
 
