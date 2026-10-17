@@ -1,6 +1,6 @@
 // API de gestion de séries - Projet binggge
 const express = require("express");
-
+const path = require("path");
 const { Pool } = require("pg");
 
 const app = express();
@@ -171,6 +171,14 @@ app.delete("/watchlist/:id", verifierUtilisateur, async (req, res) => {
   } catch (erreur) {
     res.status(500).json({ erreur: "Erreur lors de la suppression" });
   }
+});
+
+// Servir le front React compilé
+app.use(express.static(path.join(__dirname, "../public")));
+app.use("/LucasCesar7", express.static(path.join(__dirname, "../public")));
+
+app.get(["/", "/LucasCesar7"], (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
 if (require.main === module) {
