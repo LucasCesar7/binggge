@@ -1,7 +1,22 @@
 import { useState, useEffect } from "react";
 
 export default function App() {
-  const [apiUrl, setApiUrl] = useState("http://localhost:3000");
+  // Détection de l'URL selon l'environnement
+  const getApiUrl = () => {
+    if (typeof window === "undefined") return "http://localhost:3000";
+    // 1. En prod sur le serveur de l'IUT
+    if (window.location.hostname.includes("iut.cafeclaudie.fr")) {
+      return "/LucasCesar7";
+    }
+    // 2. En dev avec Vite sur le port 5173
+    if (window.location.port === "5173") {
+      return "http://localhost:3000";
+    }
+    // 3. Servi directement par Express sur localhost:3000
+    return "";
+  };
+
+  const [apiUrl, setApiUrl] = useState(getApiUrl());
   const [currentUser, setCurrentUser] = useState("lucas");
   const [userInput, setUserInput] = useState("");
 
