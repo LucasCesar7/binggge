@@ -1,183 +1,211 @@
-import { useState, useEffect } from 'react';
-
-// En local on tape sur le port 3000, ou via la variable d'env
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { useState, useEffect } from "react";
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState('olivia');
-  const [userInput, setUserInput] = useState('');
-  
+  const [apiUrl, setApiUrl] = useState("http://localhost:3000");
+  const [currentUser, setCurrentUser] = useState("olivia");
+  const [userInput, setUserInput] = useState("");
+
   // Recherche
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [shows, setShows] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-  
+  const [loadingSearch, setLoadingSearch] = useState(false);
+
   // Watchlist
   const [watchlist, setWatchlist] = useState([]);
-  const [message, setMessage] = useState(null);
+  const [notification, setNotification] = useState(null);
 
-  // Charger la watchlist quand l'utilisateur change
   useEffect(() => {
-    if (currentUser) {
-      fetchWatchlist();
-    }
-  }, [currentUser]);
+    chargerWatchlist();
+  }, [currentUser, apiUrl]);
 
-  // Récupération de la watchlist
-  const fetchWatchlist = async () => {
+  const notifier = (texte, erreur = false) => {
+    setNotification({ texte, erreur });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  // GET /watchlist
+  const chargerWatchlist = async () => {
     try {
-      const res = await fetch(`${API_URL}/watchlist`, {
-        headers: { 'X-User': currentUser }
+      const res = await fetch(`${apiUrl}/watchlist`, {
+        headers: { "X-User": currentUser },
       });
       if (res.ok) {
         const data = await res.json();
         setWatchlist(data);
       }
-    } catch (err) {
-      console.error('Erreur chargement watchlist', err);
+    } catch {
+      console.warn("Impossible de joindre l'API pour charger la watchlist.");
     }
   };
 
-  // Création / Inscription d'un utilisateur
+  // POST /register
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (!userInput.trim()) return;
+    const login = userInput.trim();
+    if (!login) return;
 
     try {
-      const res = await fetch(`${API_URL}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login: userInput.trim() })
+      await fetch(`${apiUrl}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ login }),
       });
-
-      if (res.ok) {
-        setCurrentUser(userInput.trim());
-        setUserInput('');
-        flashMessage(`Connecté en tant que "${userInput.trim()}"`);
-      } else {
-        // Si l'utilisateur existe déjà, on bascule simplement dessus
-        setCurrentUser(userInput.trim());
-        setUserInput('');
-        flashMessage(`Bascule sur le compte "${userInput.trim()}"`);
-      }
-    } catch (err) {
-      flashMessage("Erreur lors de l'enregistrement", true);
+      setCurrentUser(login);
+      setUserInput("");
+      notifier(`Utilisateur actif : ${login}`);
+    } catch {
+      notifier("Erreur lors de la connexion/inscription", true);
     }
   };
 
-  // Recherche de séries via l'API
+  // GET /shows?q=
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!query.trim()) return;
 
-    setIsSearching(true);
+    setLoadingSearch(true);
     try {
-      const res = await fetch(`${API_URL}/shows?q=${encodeURIComponent(query)}`);
+      const res = await fetch(`${apiUrl}/shows?q=${encodeURIComponent(query)}`);
       const data = await res.json();
       setShows(data);
-    } catch (err) {
-      flashMessage("Erreur lors de la recherche", true);
+    } catch {
+      notifier("Erreur lors de la recherche", true);
     } finally {
-      setIsSearching(false);
+      setLoadingSearch(false);
     }
   };
 
-  // Ajout d'une série à la watchlist
-  const addToWatchlist = async (show) => {
+  // POST /watchlist
+  const ajouterSerie = async (show) => {
     try {
-      const res = await fetch(`${API_URL}/watchlist`, {
-        method: 'POST',
+      const res = await fetch(`${apiUrl}/watchlist`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'X-User': currentUser
+          "Content-Type": "application/json",
+          "X-User": currentUser,
         },
         body: JSON.stringify({
           show_id: show.id,
-          title: show.titre
-        })
+          title: show.titre,
+        }),
       });
 
       if (res.ok) {
-        flashMessage(`"${show.titre}" ajouté à la watchlist !`);
-        // Mise à jour optimiste dans l'interface
-        setWatchlist((prev) => [...prev, { show_id: show.id, title: show.titre }]);
+        notifier(`"${show.titre}" ajouté !`);
+        chargerWatchlist();
       } else {
-        const errData = await res.json();
-        flashMessage(errData.erreur || "Erreur lors de l'ajout", true);
+        const err = await res.json();
+        notifier(err.erreur || "Erreur d'ajout", true);
       }
-    } catch (err) {
-      flashMessage("Impossible de joindre l'API", true);
+    } catch {
+      notifier("API injoignable", true);
     }
   };
 
-  const flashMessage = (text, isError = false) => {
-    setMessage({ text, isError });
-    setTimeout(() => setMessage(null), 3500);
+  // PATCH /watchlist/:id
+  const toggleVue = async (id) => {
+    try {
+      const res = await fetch(`${apiUrl}/watchlist/${id}`, {
+        method: "PATCH",
+        headers: { "X-User": currentUser },
+      });
+      if (res.ok) {
+        chargerWatchlist();
+      }
+    } catch {
+      notifier("Impossible de modifier le statut", true);
+    }
+  };
+
+  // DELETE /watchlist/:id
+  const supprimerSerie = async (id) => {
+    try {
+      const res = await fetch(`${apiUrl}/watchlist/${id}`, {
+        method: "DELETE",
+        headers: { "X-User": currentUser },
+      });
+      if (res.ok) {
+        setWatchlist(watchlist.filter((item) => item.id !== id));
+        notifier("Série retirée de la liste");
+      }
+    } catch {
+      notifier("Erreur de suppression", true);
+    }
   };
 
   return (
-    <div className="container">
-      <header className="header">
-        <div className="logo-section">
-          <h1>binggge <span>🍿</span></h1>
-          <p className="subtitle">Suivi de séries minimaliste</p>
+    <div className="app-container">
+      {/* Barre supérieure */}
+      <header className="top-bar">
+        <div>
+          <h1 className="brand">binggge</h1>
         </div>
 
-        {/* Section Identité / Auth simplifiée */}
-        <div className="user-card">
-          <div className="user-badge">
-            <span className="dot"></span>
-            Utilisateur actif (X-User) : <strong>{currentUser}</strong>
+        <div className="controls">
+          <div className="env-selector">
+            <label>Cible API :</label>
+            <select value={apiUrl} onChange={(e) => setApiUrl(e.target.value)}>
+              <option value="http://localhost:3000">Local (localhost:3000)</option>
+              <option value="https://iut.cafeclaudie.fr/LucasCesar7">Serveur IUT (Prod)</option>
+            </select>
           </div>
-          <form onSubmit={handleRegister} className="user-form">
-            <input
-              type="text"
-              placeholder="Changer de login..."
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-            />
-            <button type="submit">Valider</button>
-          </form>
+
+          <div className="user-box">
+            <span className="user-label">
+              X-User : <strong>{currentUser}</strong>
+            </span>
+            <form onSubmit={handleRegister} className="user-form">
+              <input
+                type="text"
+                placeholder="Nouveau login..."
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+              />
+              <button type="submit">Changer</button>
+            </form>
+          </div>
         </div>
       </header>
 
-      {message && (
-        <div className={`notification ${message.isError ? 'error' : 'success'}`}>
-          {message.text}
+      {/* Notifications */}
+      {notification && (
+        <div className={`toast ${notification.erreur ? "error" : "success"}`}>
+          {notification.texte}
         </div>
       )}
 
-      <main className="main-content">
-        {/* Section Recherche */}
-        <section className="search-section">
-          <h2>Rechercher une série</h2>
-          <form onSubmit={handleSearch} className="search-form">
+      {/* Grille principale */}
+      <main className="content-grid">
+        {/* Colonne Recherche */}
+        <section className="panel search-panel">
+          <h2>Rechercher des séries</h2>
+          <form onSubmit={handleSearch} className="search-bar">
             <input
               type="text"
-              placeholder="Ex: Severance, Breaking Bad, Dark..."
+              placeholder="Titre de série (ex: Severance, Dark)..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <button type="submit" disabled={isSearching}>
-              {isSearching ? 'Recherche...' : 'Chercher'}
+            <button type="submit" disabled={loadingSearch}>
+              {loadingSearch ? "Recherche..." : "Chercher"}
             </button>
           </form>
 
-          <div className="shows-grid">
+          <div className="results-grid">
             {shows.map((show) => (
-              <div key={show.id} className="show-card">
-                <div className="poster-container">
+              <div key={show.id} className="serie-card">
+                <div className="poster-wrap">
                   {show.image ? (
                     <img src={show.image} alt={show.titre} />
                   ) : (
-                    <div className="no-poster">Pas d'image</div>
+                    <div className="empty-poster">Pas d'image</div>
                   )}
                 </div>
-                <div className="show-info">
+                <div className="card-details">
                   <h3>{show.titre}</h3>
-                  <p className="show-year">{show.annee || 'Année inconnue'}</p>
-                  <button onClick={() => addToWatchlist(show)} className="btn-add">
-                    + Watchlist
+                  <span className="year">{show.annee || "N/C"}</span>
+                  <button className="btn-add" onClick={() => ajouterSerie(show)}>
+                    + Ajouter
                   </button>
                 </div>
               </div>
@@ -185,20 +213,33 @@ export default function App() {
           </div>
         </section>
 
-        {/* Section Watchlist */}
-        <section className="watchlist-section">
-          <h2>Ma Watchlist ({watchlist.length})</h2>
+        {/* Colonne Watchlist */}
+        <section className="panel watchlist-panel">
+          <h2>
+            Watchlist de {currentUser} <span>({watchlist.length})</span>
+          </h2>
+
           {watchlist.length === 0 ? (
-            <div className="empty-state">
-              <p>Aucune série dans la watchlist de <strong>{currentUser}</strong>.</p>
-              <small>Faites une recherche pour en ajouter !</small>
-            </div>
+            <p className="empty-notice">Aucune série enregistrée pour le moment.</p>
           ) : (
-            <ul className="watchlist-list">
-              {watchlist.map((item, index) => (
-                <li key={index} className="watchlist-item">
-                  <span className="item-title">{item.title}</span>
-                  <span className="badge-tag">À voir</span>
+            <ul className="watchlist">
+              {watchlist.map((item) => (
+                <li key={item.id} className={`watch-item ${item.seen ? "is-seen" : ""}`}>
+                  <label className="checkbox-wrap">
+                    <input
+                      type="checkbox"
+                      checked={item.seen}
+                      onChange={() => toggleVue(item.id)}
+                    />
+                    <span className="title">{item.title}</span>
+                  </label>
+                  <button
+                    className="btn-del"
+                    title="Supprimer"
+                    onClick={() => supprimerSerie(item.id)}
+                  >
+                    ×
+                  </button>
                 </li>
               ))}
             </ul>

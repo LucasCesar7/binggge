@@ -9,9 +9,12 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_PASSWORD: ${DB_PASS:-binggge}
       POSTGRES_DB: binggge
-    volumes: [pgdata:/var/lib/postgresql/data]
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
 volumes:
   pgdata:
