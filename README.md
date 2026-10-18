@@ -8,8 +8,15 @@ Le projet est composé d'une API en Node.js (Express), d'une base de données Po
 
 ## URL de production
 
-L'API est déployée et accessible en ligne sur le serveur de cours :
-* **Healthcheck :** `https://iut.cafeclaudie.fr/LucasCesar7/health`
+L'API est déployée et accessible en ligne sur le serveur de l'IUT :
+- **Healthcheck** : `https://iut.cafeclaudie.fr/LucasCesar7/health`
+
+- **Lien Application (Prod)** : https://iut.cafeclaudie.fr/LucasCesar7/
+---
+
+## Démarrage rapide
+
+Pour faire tourner le projet en local :
 
 1. Créer un fichier `.env` à la racine (non versionné) :
 ```env
