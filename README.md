@@ -11,6 +11,7 @@ Le projet est composé d'une API en Node.js (Express), d'une base de données Po
 L'API est déployée et accessible en ligne sur le serveur de l'IUT :
 - **Healthcheck** : `https://iut.cafeclaudie.fr/LucasCesar7/health`
 
+- **Lien Application (Prod)** : https://iut.cafeclaudie.fr/LucasCesar7/
 ---
 
 ## Démarrage rapide
